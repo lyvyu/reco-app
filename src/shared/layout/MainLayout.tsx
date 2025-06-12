@@ -9,7 +9,7 @@ export const MainLayout = () => {
             <Stack direction="row" spacing={2} sx={{height: '100%'}}>
                 <Sidebar/>
 
-                <Box component="main" sx={{flexGrow: 1, p: 3}}>
+                <Box component="main" sx={{flexGrow: 1, overflowX: 'auto', paddingTop: 2, paddingBottom: 2, paddingRight: 2}}>
                     <Outlet></Outlet>
                 </Box>
             </Stack>
