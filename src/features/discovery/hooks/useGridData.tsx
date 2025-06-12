@@ -16,30 +16,35 @@ type RequestOptions = {
 };
 
 export const useGridData = () => {
+    const [isLoading, setIsLoading] = useState(false);
     const [data, setData] = useState<ResponseType | null>(null);
     const fetchData = useCallback(async (options?: RequestOptions) => {
+        setIsLoading(true);
+
         try {
             const response = await fetch('https://recotest.pythonanywhere.com/api/v1/app-service/get-apps', {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     ...(options && {...options}),
-                    pageNumber: 0,
-                    pageSize: 25
                 })
             });
             const json = await response.json();
 
-            setData(json.appRows);
+            setData(json);
+            // setIsLoading
             console.log(json);
         } catch (error) {
             console.log(error);
             setData(null);
+        } finally {
+            setIsLoading(false);
         }
     }, []);
 
     return {
         data,
-        fetchData
+        fetchData,
+        isLoading
     };
 };

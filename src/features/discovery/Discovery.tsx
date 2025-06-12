@@ -1,10 +1,9 @@
 import {Box, Stack, TextField, Typography} from "@mui/material";
-import {DataGrid, type GridColDef} from "@mui/x-data-grid";
-import {useEffect, useState } from "react";
+import {DataGrid, type GridColDef, type GridFilterModel} from "@mui/x-data-grid";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {useGridData} from "./hooks/useGridData.tsx";
 
 export const Discovery = () => {
-    const {data, fetchData} = useGridData();
     const columns: GridColDef[] = [
         {field: 'appName', headerName: 'Name', flex: 1},
         {field: 'category', headerName: 'Category', flex: 1},
@@ -17,28 +16,61 @@ export const Discovery = () => {
             }
         },
     ];
-    const applyFilter = (event: Event, filterName: string) => {
-        const value = event?.target.value;
 
-        if (value) {
-            fetchData({[filterName]: value})
-        } else {
-            fetchData();
+    const [paginationModel, setPaginationModel] = useState({
+        page: 0,
+        pageSize: 25,
+    });
+    const [filterModel, setFilterModel] = useState<GridFilterModel>({
+        items: [],
+    });
+    const queryOptions = useMemo(
+        () => ({...paginationModel, filterModel}),
+        [paginationModel, filterModel],
+    );
+    const {data, fetchData, isLoading} = useGridData();
+    console.log(queryOptions);
+
+    const rowCountRef = useRef(data?.totalCount || 0);
+
+    const rowCount = useMemo(() => {
+        if (data?.totalCount !== undefined) {
+            rowCountRef.current = data.totalCount;
         }
+        return rowCountRef.current;
+    }, [data?.totalCount]);
+    const applyFilter = (event: Event, filterName: string) => {
+        setFilterModel({
+            ...filterModel,
+            [filterName]: event.target.name,
+        })
     }
 
     useEffect(() => {
-        fetchData()
-    }, []);
+        const params = {
+            pageNumber: queryOptions.page ?? 0,
+            pageSize: queryOptions.pageSize ?? 25
+        }
+
+        fetchData(params)
+    }, [fetchData, queryOptions]);
 
     return (
         <Stack direction="row" spacing={2}>
-            <Box sx={{flexGrow: 1}} >
+            <Box sx={{flexGrow: 1}}>
                 <DataGrid
                     columns={columns}
-                    rows={data ?? []}
+                    rows={data?.appRows ?? []}
                     getRowId={(row) => row.appId}
-                    pageSizeOptions={[5, 10, 25]}
+                    rowCount={rowCount}
+                    loading={isLoading}
+                    pageSizeOptions={[25, 50]}
+                    paginationModel={paginationModel}
+                    filterModel={filterModel}
+                    paginationMode="server"
+                    filterMode="server"
+                    onPaginationModelChange={setPaginationModel}
+                    onFilterModelChange={setFilterModel}
                 >
 
                 </DataGrid>
@@ -48,8 +80,8 @@ export const Discovery = () => {
                 <Stack direction="column" spacing={2}>
                     <Typography component='span'>Filters</Typography>
 
-                    <TextField label="Name Filter" variant="outlined" onChange={(e) => applyFilter(e, 'appName')} />
-                    <TextField label="CategoryFilter" variant="outlined" onChange={(e) => applyFilter(e, 'category')} />
+                    <TextField label="Name Filter" variant="outlined" onChange={(e) => applyFilter(e, 'appName')}/>
+                    <TextField label="CategoryFilter" variant="outlined" onChange={(e) => applyFilter(e, 'category')}/>
                 </Stack>
             </Box>
         </Stack>
